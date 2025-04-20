@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Learning Platform</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1372.0/aws-sdk.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e88e5;
+            --primary-dark: #1565c0;
+            --secondary: #ff9800;
+            --dark: #212121;
+            --light: #f5f5f5;
+            --success: #4caf50;
+            --error: #f44336;
+            --warning: #ff9800;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-danger {
+            background-color: var(--error);
+        }
+        
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        
+        .btn-disabled {
+            background-color: #cccccc !important;
+            cursor: not-allowed !important;
+            opacity: 0.7;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .alert-success {
+            background-color: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+        
+        .alert-error {
+            background-color: rgba(244, 67, 54, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+        
+        .alert-warning {
+            background-color: rgba(255, 152, 0, 0.1);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+        
+        .alert-info {
+            background-color: rgba(33, 150, 243, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .mt-3 {
+            margin-top: 15px;
+        }
+        
+        .mb-3 {
+            margin-bottom: 15px;
+        }
+        
+        .d-flex {
+            display: flex;
+        }
+        
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .disabled-section {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .disabled-tab {
+            color: #aaa;
+            cursor: not-allowed !important;
+        }
+        
+        /* Login and Register Forms */
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+        }
+        
+        .auth-toggle {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .auth-toggle a {
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .auth-toggle .disabled {
+            color: #aaa;
+            text-decoration: none;
+            cursor: not-allowed;
+        }
+        
+        .maintenance-notice {
+            background-color: #f8f9fa;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+        
+        /* Upload Section */
+        .upload-container {
+            max-width: 800px;
+            margin: 30px auto;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .hsk-required-message {
+            background-color: #fffde7;
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .file-drop-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .file-drop-area:hover, .file-drop-area.active {
+            border-color: var(--primary);
+            background-color: rgba(30, 136, 229, 0.05);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-list {
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .file-name {
+            font-weight: bold;
+        }
+        
+        .file-size {
+            color: #666;
+            font-size: 0.9rem;
+            margin-left: 10px;
+        }
+        
+        .file-remove {
+            color: var(--error);
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .status-message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        /* Password Change Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .user-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .highlight-required {
+            border: 2px solid var(--warning) !important;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .login-loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .auth-container, .upload-container {
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Authentication Section -->
+        <div id="auth-section">
+            <div class="auth-container" id="login-container">
+                <div class="card">
+                    <div class="card-header">Login to Chinese Learning Platform</div>
+                    <div class="card-body">
+                        <div id="login-alert" class="alert hidden"></div>
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="login-username">Username</label>
+                                <input type="text" id="login-username" placeholder="Enter your username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="login-password">Password</label>
+                                <input type="password" id="login-password" placeholder="Enter your password" required>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn" style="width: 100%;" id="login-button">Login</button>
+                            </div>
+                            <div class="login-loading" id="login-loading">
+                                <div class="spinner"></div> Authenticating...
+                            </div>
+                        </form>
+                        <div class="auth-toggle">
+                            <span>Don't have an account? <span class="disabled" title="Registration is currently disabled">Register</span></span>
+                        </div>
+                        <div class="maintenance-notice">
+                            <strong>Note:</strong> New user registration is currently disabled. Please contact your administrator for account access.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Application Section (Hidden initially) -->
+        <div id="app-section" class="hidden">
+            <div class="header-container">
+                <h1>Chinese Learning Platform</h1>
+                <div class="user-controls">
+                    <span id="user-display"></span>
+                    <button id="change-password-btn" class="btn btn-secondary">Change Password</button>
+                    <button id="logout-btn" class="btn btn-danger">Logout</button>
+                </div>
+            </div>
+            
+            <div class="upload-container">
+                <div class="card">
+                    <div class="card-header">Upload Learning Materials</div>
+                    <div class="card-body">
+                        <div id="upload-alert" class="alert hidden"></div>
+                        
+                        <!-- HSK Level Selection -->
+                        <div class="form-group">
+                            <label for="hsk-level">Select HSK Level <span style="color: red;">*</span></label>
+                            <select id="hsk-level" class="highlight-required">
+                                <option value="" selected disabled>-- Select HSK Level --</option>
+                                <!-- These will be populated based on user permissions -->
+                            </select>
+                            <div class="hsk-required-message" id="hsk-required-message">
+                                Please select an HSK level before proceeding
+                            </div>
+                        </div>
+                        
+                        <!-- Upload Type Tabs -->
+                        <div class="tabs">
+                            <div class="tab active disabled-tab" data-tab="file-upload">File Upload</div>
+                            <div class="tab disabled-tab" data-tab="text-input">Text Input</div>
+                        </div>
+                        
+                        <!-- File Upload Section -->
+                        <div id="file-upload" class="tab-content disabled-section">
+                            <div class="file-drop-area" id="drop-area">
+                                <p>Drag & drop files here or click to browse</p>
+                                <p>Supported formats: .txt, .csv, .pdf, .doc, .docx</p>
+                                <input type="file" id="file-input" class="file-input" multiple>
+                            </div>
+                            
+                            <div id="file-list" class="file-list"></div>
+                            
+                            <!-- Content Type -->
+                            <div class="form-group">
+                                <label for="file-content-type">Content Type</label>
+                                <select id="file-content-type">
+                                    <option value="vocabulary">Vocabulary</option>
+                                    <option value="grammar">Grammar</option>
+                                    <option value="dialogues">Dialogues</option>
+                                    <option value="reading">Reading</option>
+                                    <option value="writing">Writing</option>
+                                    <option value="pronunciation">Pronunciation</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Upload Progress -->
+                            <div id="file-progress-container" class="progress-container">
+                                <div class="progress-bar">
+                                    <div id="file-progress" class="progress"></div>
+                                </div>
+                                <div id="file-status-message" class="status-message">Uploading files...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Text Input Section -->
+                        <div id="text-input" class="tab-content hidden disabled-section">
+                            <div class="form-group">
+                                <label for="text-title">Title</label>
+                                <input type="text" id="text-title" placeholder="Enter a title for this content">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="text-content">Content</label>
+                                <textarea id="text-content" rows="10" placeholder="Enter or paste Chinese text content here..."></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="text-content-type">Content Type</label>
+                                <select id="text-content-type">
+                                    <option value="vocabulary">Vocabulary</option>
+                                    <option value="grammar">Grammar</option>
+                                    <option value="dialogues">Dialogues</option>
+                                    <option value="reading">Reading</option>
+                                    <option value="writing">Writing</option>
+                                    <option value="pronunciation">Pronunciation</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Upload Progress -->
+                            <div id="text-progress-container" class="progress-container">
+                                <div class="progress-bar">
+                                    <div id="text-progress" class="progress"></div>
+                                </div>
+                                <div id="text-status-message" class="status-message">Uploading text...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-between mt-3">
+                            <button id="exit-btn" class="btn btn-secondary">Exit</button>
+                            <button id="upload-btn" class="btn btn-disabled" disabled>Upload</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Password Change Modal -->
+        <div id="password-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="close-modal">&times;</span>
+                <h2 class="mb-3">Change Password</h2>
+                <div id="password-alert" class="alert hidden"></div>
+                <form id="password-form">
+                    <div class="form-group">
+                        <label for="current-password">Current Password</label>
+                        <input type="password" id="current-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">New Password</label>
+                        <input type="password" id="new-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-new-password">Confirm New Password</label>
+                        <input type="password" id="confirm-new-password" required>
+                    </div>
+                    <div class="form-group text-center">
+                        <button type="submit" class="btn">Change Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let currentUser = null;
+        let selectedFiles = [];
+        
+        // Define the S3 bucket and user configuration
+        const S3_CONFIG = {
+            region: 'us-east-1',  // Your AWS region
+            bucketName: 'chinese-learning-platform', // Your S3 bucket name
+            userDataKey: 'admin/users.json', // Path to user database in S3
+            credentials: {
+                // IMPORTANT: For a production app, use proper credentials management!
+                // These would typically come from environment variables
+                accessKeyId: 'DUMMY_ACCESS_KEY', // Replace with your key or use environment vars
+                secretAccessKey: 'DUMMY_SECRET_KEY' // Replace with your key or use environment vars
+            }
+        };
+        
+        // Mock user database - used as fallback if S3 is not available
+        const MOCK_USERS = [
+            { 
+                username: 'teacher1', 
+                password: 'password123', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5']
+            },
+            { 
+                username: 'limengxia', 
+                password: 'L12345', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            { 
+                username: 'caomi', 
+                password: 'C12345', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            { 
+                username: 'zhoumanjie', 
+                password: 'Z12345', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            { 
+                username: 'xuexiaoxi', 
+                password: 'X12345', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            { 
+                username: 'gaopei', 
+                password: 'g12345', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            { 
+                username: 'luoqiulin', 
+                password: 'L12345', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            { 
+                username: 'gaopei', 
+                password: 'G12345', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            { 
+                username: 'chenliling', 
+                password: 'C12345', 
+                role: 'teacher',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            { 
+                username: 'puxuechen', 
+                password: 'P12345', 
+                role: 'teacher',
+                allowedHskLevels:['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5','HSK6','HSK7','HSK8','HSK9']
+            },
+            
+            { 
+                username: 'admin', 
+                password: 'admin123', 
+                role: 'admin',
+                allowedHskLevels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'HSK7', 'HSK8', 'HSK9']
+            },
+            { 
+                username: 'student1', 
+                password: 'password123', 
+                role: 'student',
+                allowedHskLevels: ['HSK1', 'HSK2']
+            }
+        ];
+        
+        // DOM Elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auth elements
+            const authSection = document.getElementById('auth-section');
+            const loginContainer = document.getElementById('login-container');
+            const loginForm = document.getElementById('login-form');
+            const loginAlert = document.getElementById('login-alert');
+            const loginButton = document.getElementById('login-button');
+            const loginLoading = document.getElementById('login-loading');
+            const loginUsername = document.getElementById('login-username');
+            const loginPassword = document.getElementById('login-password');
+            
+            // App elements
+            const appSection = document.getElementById('app-section');
+            const userDisplay = document.getElementById('user-display');
+            const changePasswordBtn = document.getElementById('change-password-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const uploadAlert = document.getElementById('upload-alert');
+            const hskLevel = document.getElementById('hsk-level');
+            const hskRequiredMessage = document.getElementById('hsk-required-message');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('file-input');
+            const fileList = document.getElementById('file-list');
+            const fileContentType = document.getElementById('file-content-type');
+            const textTitle = document.getElementById('text-title');
+            const textContent = document.getElementById('text-content');
+            const textContentType = document.getElementById('text-content-type');
+            const fileProgressContainer = document.getElementById('file-progress-container');
+            const fileProgress = document.getElementById('file-progress');
+            const fileStatusMessage = document.getElementById('file-status-message');
+            const textProgressContainer = document.getElementById('text-progress-container');
+            const textProgress = document.getElementById('text-progress');
+            const textStatusMessage = document.getElementById('text-status-message');
+            const uploadBtn = document.getElementById('upload-btn');
+            const exitBtn = document.getElementById('exit-btn');
+            
+            // Password modal elements
+            const passwordModal = document.getElementById('password-modal');
+            const closeModal = document.getElementById('close-modal');
+            const passwordForm = document.getElementById('password-form');
+            const passwordAlert = document.getElementById('password-alert');
+            
+            // Initialize AWS S3
+            function initializeS3() {
+                // Configure AWS SDK
+                AWS.config.update({
+                    region: S3_CONFIG.region,
+                    credentials: new AWS.Credentials(
+                        S3_CONFIG.credentials.accessKeyId,
+                        S3_CONFIG.credentials.secretAccessKey
+                    )
+                });
+                
+                // Create S3 service object
+                const s3 = new AWS.S3();
+                
+                return {
+                    // Load user data from S3
+                    loadUsers: async function() {
+                        try {
+                            // This is a simulation since we're not actually connecting to S3
+                            console.log("Simulating loading users from S3...");
+                            
+                            // In a real app, this would be:
+                            /*
+                            const response = await s3.getObject({
+                                Bucket: S3_CONFIG.bucketName,
+                                Key: S3_CONFIG.userDataKey
+                            }).promise();
+                            
+                            return JSON.parse(response.Body.toString('utf-8'));
+                            */
+                            
+                            // For simulation, we'll return after a delay
+                            return new Promise((resolve) => {
+                                setTimeout(() => {
+                                    resolve(MOCK_USERS);
+                                }, 1000); // 1 second delay to simulate network
+                            });
+                            
+                        } catch (error) {
+                            console.error("Error loading users from S3:", error);
+                            return MOCK_USERS; // Fallback to mock data
+                        }
+                    },
+                    
+                    // Upload file to S3
+                    upload: function(file, key, onProgress, onComplete) {
+                        // Simulate upload
+                        console.log(`Simulating upload of ${file.name} to ${key}...`);
+                        
+                        // In a real app, this would be:
+                        /*
+                        const upload = new AWS.S3.ManagedUpload({
+                            params: {
+                                Bucket: S3_CONFIG.bucketName,
+                                Key: key,
+                                Body: file,
+                                ContentType: file.type
+                            }
+                        });
+                        
+                        upload.on('httpUploadProgress', (evt) => {
+                            const progress = Math.round((evt.loaded / evt.total) * 100);
+                            onProgress(progress);
+                        });
+                        
+                        upload.send((err, data) => {
+                            if (err) {
+                                onComplete({ success: false, error: err });
+                            } else {
+                                onComplete({ success: true, location: data.Location });
+                            }
+                        });
+                        */
+                        
+                        // For simulation, we'll use a timer
+                        let progress = 0;
+                        const interval = setInterval(() => {
+                            progress += 5;
+                            onProgress(progress);
+                            
+                            if (progress >= 100) {
+                                clearInterval(interval);
+                                onComplete({ 
+                                    success: true, 
+                                    location: `https://${S3_CONFIG.bucketName}.s3.amazonaws.com/${key}`
+                                });
+                            }
+                        }, 200);
+                    },
+                    
+                    // Upload text to S3
+                    uploadText: function(text, key, onProgress, onComplete) {
+                        // Simulate text upload
+                        console.log(`Simulating upload of text content to ${key}...`);
+                        
+                        // In a real app, this would be:
+                        /*
+                        const params = {
+                            Bucket: S3_CONFIG.bucketName,
+                            Key: key,
+                            Body: text,
+                            ContentType: 'application/json'
+                        };
+                        
+                        const upload = new AWS.S3.ManagedUpload({ params });
+                        
+                        upload.on('httpUploadProgress', (evt) => {
+                            const progress = Math.round((evt.loaded / evt.total) * 100);
+                            onProgress(progress);
+                        });
+                        
+                        upload.send((err, data) => {
+                            if (err) {
+                                onComplete({ success: false, error: err });
+                            } else {
+                                onComplete({ success: true, location: data.Location });
+                            }
+                        });
+                        */
+                        
+                        // For simulation, we'll use a timer
+                        let progress = 0;
+                        const interval = setInterval(() => {
+                            progress += 10;
+                            onProgress(progress);
+                            
+                            if (progress >= 100) {
+                                clearInterval(interval);
+                                onComplete({
+                                    success: true,
+                                    location: `https://${S3_CONFIG.bucketName}.s3.amazonaws.com/${key}`
+                                });
+                            }
+                        }, 200);
+                    },
+                    
+                    // Update user data in S3 (for password changes)
+                    updateUserData: async function(users) {
+                        try {
+                            // This is a simulation since we're not actually connecting to S3
+                            console.log("Simulating updating user data in S3...");
+                            
+                            // In a real app, this would be:
+                            /*
+                            await s3.putObject({
+                                Bucket: S3_CONFIG.bucketName,
+                                Key: S3_CONFIG.userDataKey,
+                                Body: JSON.stringify(users),
+                                ContentType: 'application/json'
+                            }).promise();
+                            
+                            return true;
+                            */
+                            
+                            // For simulation, we'll return after a delay
+                            return new Promise((resolve) => {
+                                setTimeout(() => {
+                                    // Update our mock users
+                                    MOCK_USERS.length = 0;
+                                    users.forEach(user => MOCK_USERS.push(user));
+                                    resolve(true);
+                                }, 800);
+                            });
+                            
+                        } catch (error) {
+                            console.error("Error updating user data in S3:", error);
+                            return false;
+                        }
+                    }
+                };
+            }
+            
+            const s3Service = initializeS3();
+            
+            // Update interface based on HSK selection
+            function updateInterfaceBasedOnHskSelection() {
+                const level = hskLevel.value;
+                const uploadBtn = document.getElementById('upload-btn');
+                const fileUploadArea = document.getElementById('file-upload');
+                const textInputArea = document.getElementById('text-input');
+                const tabs = document.querySelectorAll('.tab');
+                
+                if (!level) {
+                    // No HSK level selected, disable interface
+                    uploadBtn.disabled = true;
+                    uploadBtn.classList.add('btn-disabled');
+                    fileUploadArea.classList.add('disabled-section');
+                    textInputArea.classList.add('disabled-section');
+                    hskRequiredMessage.style.display = 'block';
+                    hskLevel.classList.add('highlight-required');
+                    
+                    // Disable tabs
+                    tabs.forEach(tab => {
+                        tab.classList.add('disabled-tab');
+                        tab.style.pointerEvents = 'none';
+                    });
+                } else {
+                    // HSK level selected, enable interface
+                    uploadBtn.disabled = false;
+                    uploadBtn.classList.remove('btn-disabled');
+                    fileUploadArea.classList.remove('disabled-section');
+                    textInputArea.classList.remove('disabled-section');
+                    hskRequiredMessage.style.display = 'none';
+                    hskLevel.classList.remove('highlight-required');
+                    
+                    // Enable tabs
+                    tabs.forEach(tab => {
+                        tab.classList.remove('disabled-tab');
+                        tab.style.pointerEvents = 'auto';
+                    });
+                }
+            }
+            
+            // Populate HSK level dropdown based on user permissions
+            function populateHskLevels() {
+                // Clear existing options except the placeholder
+                while (hskLevel.options.length > 1) {
+                    hskLevel.remove(1);
+                }
+                
+                // Add HSK levels based on user permissions
+                if (currentUser && currentUser.allowedHskLevels) {
+                    currentUser.allowedHskLevels.forEach(level => {
+                        const option = document.createElement('option');
+                        option.value = level;
+                        option.textContent = level;
+                        hskLevel.appendChild(option);
+                    });
+                }
+            }
+            
+            // Authentication functions
+            async function login(username, password) {
+                try {
+                    // Show loading indicator
+                    loginButton.disabled = true;
+                    loginLoading.style.display = 'block';
+                    
+                    // Load users from S3
+                    const users = await s3Service.loadUsers();
+                    
+                    // Find matching user
+                    const user = users.find(u => u.username === username && u.password === password);
+                    
+                    if (user) {
+                        currentUser = { ...user };
+                        showApp();
+                        return true;
+                    }
+                    
+                    return false;
+                } catch (error) {
+                    console.error("Login error:", error);
+                    return false;
+                } finally {
+                    // Hide loading indicator
+                    loginButton.disabled = false;
+                    loginLoading.style.display = 'none';
+                }
+            }
+            
+            function logout() {
+                currentUser = null;
+                hideApp();
+            }
+            
+            async function changePassword(currentPassword, newPassword) {
+                try {
+                    // Load current users
+                    const users = await s3Service.loadUsers();
+                    
+                    // Find user in database
+                    const userIndex = users.findIndex(u => 
+                        u.username === currentUser.username && u.password === currentPassword
+                    );
+                    
+                    if (userIndex === -1) {
+                        return false;
+                    }
+                    
+                    // Update password
+                    users[userIndex].password = newPassword;
+                    currentUser.password = newPassword;
+                    
+                    // Save updated users to S3
+                    const saveResult = await s3Service.updateUserData(users);
+                    return saveResult;
+                    
+                } catch (error) {
+                    console.error("Password change error:", error);
+                    return false;
+                }
+            }
+            
+            // UI functions
+            function showApp() {
+                authSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                userDisplay.textContent = `Logged in as: ${currentUser.username} (${currentUser.role})`;
+                
+                // Populate HSK levels based on user permissions
+                populateHskLevels();
+                
+                // Set initial state of interface based on HSK selection
+                updateInterfaceBasedOnHskSelection();
+            }
+            
+            function hideApp() {
+                appSection.classList.add('hidden');
+                authSection.classList.remove('hidden');
+                
+                // Reset forms
+                loginForm.reset();
+                loginContainer.classList.remove('hidden');
+                
+                // Reset selections and files
+                hskLevel.value = '';
+                fileList.innerHTML = '';
+                selectedFiles = [];
+                textTitle.value = '';
+                textContent.value = '';
+            }
+            
+            function showAlert(element, type, message) {
+                element.textContent = message;
+                element.className = `alert alert-${type}`;
+                element.classList.remove('hidden');
+                
+                // Hide after 5 seconds
+                setTimeout(() => {
+                    element.classList.add('hidden');
+                }, 5000);
+            }
+            
+            // File handling functions
+            function handleFiles(files) {
+                // Check if HSK level is selected
+                if (!hskLevel.value) {
+                    showAlert(uploadAlert, 'warning', 'Please select an HSK level before adding files.');
+                    return;
+                }
+                
+                for (let i = 0; i < files.length; i++) {
+                    addFileToList(files[i]);
+                }
+            }
+            
+            function addFileToList(file) {
+                // Check if file is already in the list
+                if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    return;
+                }
+                
+                // Check file type
+                const extension = file.name.split('.').pop().toLowerCase();
+                const allowedTypes = ['txt', 'csv', 'pdf', 'doc', 'docx'];
+                
+                if (!allowedTypes.includes(extension)) {
+                    showAlert(uploadAlert, 'error', `File type .${extension} is not supported.`);
+                    return;
+                }
+                
+                // Add file to array
+                selectedFiles.push(file);
+                
+                // Create file item element
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                const fileInfo = document.createElement('div');
+                fileInfo.innerHTML = `
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">${formatFileSize(file.size)}</span>
+                `;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'file-remove';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.addEventListener('click', () => {
+                    // Remove from array
+                    selectedFiles = selectedFiles.filter(f => !(f.name === file.name && f.size === file.size));
+                    // Remove from DOM
+                    fileList.removeChild(fileItem);
+                });
+                
+                fileItem.appendChild(fileInfo);
+                fileItem.appendChild(removeBtn);
+                
+                fileList.appendChild(fileItem);
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes < 1024) {
+                    return bytes + ' bytes';
+                } else if (bytes < 1024 * 1024) {
+                    return (bytes / 1024).toFixed(1) + ' KB';
+                } else {
+                    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                }
+            }
+            
+            function uploadFiles() {
+                const selectedHskLevel = hskLevel.value;
+                
+                // Check if HSK level is selected
+                if (!selectedHskLevel) {
+                    showAlert(uploadAlert, 'error', 'Please select an HSK level before uploading.');
+                    hskLevel.focus();
+                    return;
+                }
+                
+                const selectedTab = document.querySelector('.tab.active').dataset.tab;
+                
+                if (selectedTab === 'file-upload') {
+                    // File upload
+                    if (selectedFiles.length === 0) {
+                        showAlert(uploadAlert, 'error', 'Please select at least one file to upload.');
+                        return;
+                    }
+                    
+                    const contentType = fileContentType.value;
+                    
+                    // Show progress
+                    fileProgressContainer.style.display = 'block';
+                    fileProgress.style.width = '0%';
+                    fileStatusMessage.textContent = 'Preparing to upload...';
+                    
+                    // Disable upload button
+                    uploadBtn.disabled = true;
+                    uploadBtn.classList.add('btn-disabled');
+                    
+                    // Upload multiple files
+                    let uploadedCount = 0;
+                    
+                    selectedFiles.forEach((file, index) => {
+                        const key = `users/${currentUser.username}/${selectedHskLevel}/${contentType}/${Date.now()}_${file.name}`;
+                        
+                        s3Service.upload(file, key, 
+                            // Progress callback
+                            (progress) => {
+                                // For multiple files, we'll show progress for current file
+                                fileProgress.style.width = `${progress}%`;
+                                fileStatusMessage.textContent = `Uploading ${file.name}... ${progress}%`;
+                            },
+                            // Complete callback
+                            (result) => {
+                                uploadedCount++;
+                                
+                                if (uploadedCount === selectedFiles.length) {
+                                    // All files uploaded
+                                    fileStatusMessage.textContent = 'All files uploaded successfully!';
+                                    
+                                    // Show success message
+                                    showAlert(uploadAlert, 'success', `Successfully uploaded ${selectedFiles.length} files to HSK level ${selectedHskLevel}.`);
+                                    
+                                    // Reset
+                                    setTimeout(() => {
+                                        fileProgressContainer.style.display = 'none';
+                                        fileList.innerHTML = '';
+                                        selectedFiles = [];
+                                        uploadBtn.disabled = false;
+                                        uploadBtn.classList.remove('btn-disabled');
+                                    }, 2000);
+                                }
+                            }
+                        );
+                    });
+                    
+                } else {
+                    // Text upload
+                    const title = textTitle.value.trim();
+                    const content = textContent.value.trim();
+                    
+                    if (!title) {
+                        showAlert(uploadAlert, 'error', 'Please enter a title for the text content.');
+                        textTitle.focus();
+                        return;
+                    }
+                    
+                    if (!content) {
+                        showAlert(uploadAlert, 'error', 'Please enter some text content to upload.');
+                        textContent.focus();
+                        return;
+                    }
+                    
+                    const contentType = textContentType.value;
+                    
+                    // Show progress
+                    textProgressContainer.style.display = 'block';
+                    textProgress.style.width = '0%';
+                    textStatusMessage.textContent = 'Preparing to upload text...';
+                    
+                    // Disable upload button
+                    uploadBtn.disabled = true;
+                    uploadBtn.classList.add('btn-disabled');
+                    
+                    // Create text file from content
+                    const textData = {
+                        title: title,
+                        content: content,
+                        hskLevel: selectedHskLevel,
+                        contentType: contentType,
+                        createdBy: currentUser.username,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    const key = `users/${currentUser.username}/${selectedHskLevel}/${contentType}/${Date.now()}_${title.replace(/\s+/g, '_')}.json`;
+                    
+                    s3Service.uploadText(JSON.stringify(textData), key,
+                        // Progress callback
+                        (progress) => {
+                            textProgress.style.width = `${progress}%`;
+                            textStatusMessage.textContent = `Uploading text... ${progress}%`;
+                        },
+                        // Complete callback
+                        (result) => {
+                            textStatusMessage.textContent = 'Text uploaded successfully!';
+                            
+                            // Show success message
+                            showAlert(uploadAlert, 'success', `Successfully uploaded "${title}" to HSK level ${selectedHskLevel}.`);
+                            
+                            // Reset
+                            setTimeout(() => {
+                                textProgressContainer.style.display = 'none';
+                                textTitle.value = '';
+                                textContent.value = '';
+                                uploadBtn.disabled = false;
+                                uploadBtn.classList.remove('btn-disabled');
+                            }, 2000);
+                        }
+                    );
+                }
+            }
+            
+            // Event Listeners
+            // Login form submission
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const username = loginUsername.value;
+                const password = loginPassword.value;
+                
+                const loginSuccess = await login(username, password);
+                
+                if (loginSuccess) {
+                    showAlert(loginAlert, 'success', 'Login successful!');
+                } else {
+                    showAlert(loginAlert, 'error', 'Invalid username or password.');
+                }
+            });
+            
+            // Logout button
+            logoutBtn.addEventListener('click', logout);
+            
+            // HSK level change
+            hskLevel.addEventListener('change', updateInterfaceBasedOnHskSelection);
+            
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Only allow switching if HSK level is selected
+                    if (!hskLevel.value) {
+                        showAlert(uploadAlert, 'warning', 'Please select an HSK level first.');
+                        return;
+                    }
+                    
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.add('hidden'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.remove('hidden');
+                });
+            });
+            
+            // File drag and drop
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                // Only highlight if HSK level is selected
+                if (hskLevel.value) {
+                    dropArea.classList.add('active');
+                }
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('active');
+            }
+            
+            dropArea.addEventListener('drop', (e) => {
+                if (!hskLevel.value) {
+                    showAlert(uploadAlert, 'warning', 'Please select an HSK level before uploading files.');
+                    return;
+                }
+                
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            });
+            
+            dropArea.addEventListener('click', () => {
+                if (!hskLevel.value) {
+                    showAlert(uploadAlert, 'warning', 'Please select an HSK level before uploading files.');
+                    hskLevel.focus();
+                    return;
+                }
+                
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', () => {
+                handleFiles(fileInput.files);
+            });
+            
+            // Upload button
+            uploadBtn.addEventListener('click', uploadFiles);
+            
+            // Exit button
+            exitBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to exit? Any unsaved data will be lost.')) {
+                    logout();
+                }
+            });
+            
+            // Change password
+            changePasswordBtn.addEventListener('click', () => {
+                passwordModal.style.display = 'block';
+            });
+            
+            closeModal.addEventListener('click', () => {
+                passwordModal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', (e) => {
+                if (e.target === passwordModal) {
+                    passwordModal.style.display = 'none';
+                }
+            });
+            
+            passwordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmNewPassword = document.getElementById('confirm-new-password').value;
+                
+                if (newPassword !== confirmNewPassword) {
+                    showAlert(passwordAlert, 'error', 'New passwords do not match.');
+                    return;
+                }
+                
+                // Show loading in the password alert
+                passwordAlert.textContent = "Updating password...";
+                passwordAlert.className = "alert alert-info";
+                passwordAlert.classList.remove('hidden');
+                
+                const changeSuccess = await changePassword(currentPassword, newPassword);
+                
+                if (changeSuccess) {
+                    showAlert(passwordAlert, 'success', 'Password changed successfully!');
+                    // Reset form
+                    passwordForm.reset();
+                    
+                    // Close modal after a delay
+                    setTimeout(() => {
+                        passwordModal.style.display = 'none';
+                    }, 2000);
+                } else {
+                    showAlert(passwordAlert, 'error', 'Current password is incorrect or update failed.');
+                }
+            });
+            
+            // Call it initially to set the correct state on page load
+            updateInterfaceBasedOnHskSelection();
+            
+            // Display login hints for demo purposes
+            console.log("Available login credentials for demo:");
+            console.log("Username: teacher1, Password: password123");
+            console.log("Username: admin, Password: admin123");
+            console.log("Username: student1, Password: password123");
+        });
+    </script>
+</body>
+</html>
